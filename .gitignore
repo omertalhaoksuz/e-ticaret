@@ -1,0 +1,13 @@
+# Visual Studio cache and temporary files
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+*.csproj.user
+*.dll
+*.exe
+*.db
+*.pdb
+*.cache
