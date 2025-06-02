@@ -6,7 +6,7 @@ namespace ECommerceApi.Dtos
     public class OrderDetailDto
     {
         public int OrderId { get; set; }
-        public string Status { get; set; } = "Aktif";
+        public string Status { get; set; } = "Pending";
         public DateTime CreatedAt { get; set; }
 
         public List<OrderItemDto> Items { get; set; } = new();
@@ -25,5 +25,6 @@ namespace ECommerceApi.Dtos
         public string? ColorName { get; set; }
         public string? Description { get; set; }
         public int Quantity { get; set; }
+        public decimal Price { get; set; }
     }
 }

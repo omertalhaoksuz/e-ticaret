@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ECommerceApi.Controllers
@@ -25,12 +26,35 @@ namespace ECommerceApi.Controllers
 
         // ✅ GET: Tüm ürünleri listele
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Product>>> GetAll()
+        public async Task<ActionResult<IEnumerable<ProductDto>>> GetAll()
         {
-            return await _context.Products
-                .Include(p => p.ProductColorOptions)
-                    .ThenInclude(pco => pco.ColorOption)
-                .ToListAsync();
+            try
+            {
+                var products = await _context.Products
+                    .Include(p => p.ProductColorOptions)
+                        .ThenInclude(pco => pco.ColorOption)
+                    .ToListAsync();
+
+                var result = products.Select(p => new ProductDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Price = p.Price,
+                    ImageUrl = p.ImageUrl,
+                    Description = p.Description,
+                    Colors = p.ProductColorOptions
+                                .Where(pco => pco.ColorOption != null)
+                                .Select(pco => pco.ColorOption!.Name)
+                                .ToList(),
+                                ShowOnHome = p.ShowOnHome
+                }).ToList();
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Hata: {ex.Message}");
+            }
         }
 
         // ✅ GET: Belirli bir ürünü getir + renk bilgisiyle
@@ -173,6 +197,19 @@ namespace ECommerceApi.Controllers
 
             await _context.SaveChangesAsync();
             return Ok("Display settings updated.");
+        }
+        [HttpPut("{id}/featured")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateFeaturedStatus(int id, [FromBody] bool isFeatured)
+        {
+            var product = await _context.Products.FindAsync(id);
+            if (product == null)
+                return NotFound("Ürün bulunamadı.");
+
+            product.ShowOnHome = isFeatured;
+            await _context.SaveChangesAsync();
+
+            return Ok("Featured durumu güncellendi.");
         }
 
     }

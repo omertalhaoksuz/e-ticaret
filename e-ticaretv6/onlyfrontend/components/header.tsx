@@ -1,15 +1,12 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
 import { ShoppingCart, ChevronDown } from "lucide-react"
-
+import { useAuth } from "@/contexts/AuthContext"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
-// Mock data - would come from API in real app
 const categories = [
   {
     id: 1,
@@ -54,38 +51,25 @@ const categories = [
 ]
 
 export default function Header() {
-  const pathname = usePathname()
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
-
-  // Toggle login status for demo purposes
-  const toggleLogin = () => {
-    setIsLoggedIn(!isLoggedIn)
-  }
-
-  // Toggle admin status for demo purposes
-  const toggleAdmin = () => {
-    setIsAdmin(!isAdmin)
-  }
+  const { user, logout } = useAuth()
+  const isLoggedIn = !!user
+  const isAdmin = user?.role === "Admin"
 
   return (
     <header className="border-b">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-8">
-            {/* Home button */}
             <Link href="/" className="text-xl font-bold">
               3D Print Hub
             </Link>
 
-            {/* Dashboard button (admin only) */}
             {isAdmin && (
               <Link href="/admin">
                 <Button variant="ghost">Dashboard</Button>
               </Link>
             )}
 
-            {/* Category dropdown menus */}
             <nav className="hidden md:flex items-center space-x-4">
               {categories.map((category) => (
                 <DropdownMenu key={category.id}>
@@ -112,25 +96,14 @@ export default function Header() {
             </nav>
           </div>
 
-          {/* User authentication */}
           <div className="flex items-center space-x-4">
-            {/* Demo toggles - remove in production */}
-            <div className="flex items-center space-x-2 mr-4">
-              <Button variant="outline" size="sm" onClick={toggleLogin}>
-                Toggle Login
-              </Button>
-              <Button variant="outline" size="sm" onClick={toggleAdmin}>
-                Toggle Admin
-              </Button>
-            </div>
-
             {isLoggedIn ? (
               <>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative">
                       <Avatar>
-                        <AvatarFallback>JD</AvatarFallback>
+                        <AvatarFallback>{user?.email?.[0]?.toUpperCase() ?? "U"}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
@@ -141,7 +114,7 @@ export default function Header() {
                     <DropdownMenuItem asChild>
                       <Link href="/orders">My Orders</Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setIsLoggedIn(false)}>Logout</DropdownMenuItem>
+                    <DropdownMenuItem onClick={logout}>Logout</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
 

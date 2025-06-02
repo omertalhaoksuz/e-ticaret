@@ -6,13 +6,34 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import Link from "next/link";
+import { Package, Check, Clock, X, MoreHorizontal } from "lucide-react";
 
-import { Package, Check, Clock, X, MoreHorizontal } from "lucide-react"; 
+interface OrderItem {
+  productName: string;
+  quantity: number;
+  price: number;
+}
+
+interface AdminOrder {
+  orderId: number;
+  userFullName: string;
+  userEmail: string;
+  status: string;
+  items: OrderItem[];
+  createdAt: string;
+}
 
 export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [orders, setOrders] = useState<AdminOrder[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const { token } = useAuth();
 
   useEffect(() => {
@@ -28,9 +49,9 @@ export default function AdminOrdersPage() {
     if (!token) return;
     try {
       await updateOrderStatus(orderId, status, token);
-      setOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          order.id === orderId ? { ...order, status } : order
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.orderId === orderId ? { ...order, status } : order
         )
       );
     } catch (error) {
@@ -39,46 +60,62 @@ export default function AdminOrdersPage() {
   };
 
   const getStatusBadge = (status: string) => {
+    const baseClass = "flex items-center gap-1";
     switch (status) {
       case "pending":
         return (
-          <Badge variant="outline" className="flex items-center gap-1">
+          <Badge variant="secondary" className={baseClass}>
             <Clock className="h-3 w-3" />
             Pending
           </Badge>
         );
       case "processing":
         return (
-          <Badge variant="outline" className="flex items-center gap-1 bg-blue-50 text-blue-700 border-blue-300">
+          <Badge variant="secondary" className={`${baseClass} bg-blue-50 text-blue-700 border-blue-300`}>
             <Package className="h-3 w-3" />
             Processing
           </Badge>
         );
       case "completed":
         return (
-          <Badge variant="outline" className="flex items-center gap-1 bg-green-50 text-green-700 border-green-300">
+          <Badge variant="secondary" className={`${baseClass} bg-green-50 text-green-700 border-green-300`}>
             <Check className="h-3 w-3" />
             Completed
           </Badge>
         );
       case "rejected":
         return (
-          <Badge variant="outline" className="flex items-center gap-1 bg-red-50 text-red-700 border-red-300">
+          <Badge variant="secondary" className={`${baseClass} bg-red-50 text-red-700 border-red-300`}>
             <X className="h-3 w-3" />
             Rejected
           </Badge>
         );
       default:
-        return <Badge variant="outline">{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>;
+        return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  const calculateTotal = (items: OrderItem[]) =>
+    items.reduce((acc, item) => acc + item.quantity * (item.price ?? 0), 0);
+
+  if (loading) return <div className="p-6">Loading...</div>;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <h1 className="text-3xl font-bold">Orders</h1>
+      </div>
+
+      <div className="flex gap-2 flex-wrap">
+        {["all", "pending", "processing", "completed", "rejected"].map((status) => (
+          <Button
+            key={status}
+            variant={statusFilter === status ? "default" : "outline"}
+            onClick={() => setStatusFilter(status)}
+          >
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+          </Button>
+        ))}
       </div>
 
       <Card>
@@ -98,34 +135,50 @@ export default function AdminOrdersPage() {
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order) => (
-                  <tr key={order.id}>
-                    <td className="px-4 py-2">{order.id}</td>
-                    <td className="px-4 py-2">{order.customer}</td>
-                    <td className="px-4 py-2">{getStatusBadge(order.status)}</td>
-                    <td className="px-4 py-2">${order.total.toFixed(2)}</td>
-                    <td className="px-4 py-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order.id, "processing")}>
-                            Mark as Processing
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order.id, "completed")}>
-                            Mark as Completed
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order.id, "rejected")}>
-                            Mark as Rejected
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                ))}
+                {orders
+                  .filter(order => statusFilter === "all" || order.status === statusFilter)
+                  .map((order) => (
+                    <tr key={order.orderId}>
+                      <td className="px-4 py-2">{order.orderId}</td>
+                      <td className="px-4 py-2">
+                        {order.userFullName}
+                        <br />
+                        <span className="text-xs text-muted-foreground">
+                          {order.userEmail}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2">{getStatusBadge(order.status)}</td>
+                      <td className="px-4 py-2">
+                        ${calculateTotal(order.items).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-2">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order.orderId, "pending")}>
+                              Mark as Pending
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order.orderId, "processing")}>
+                              Mark as Processing
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order.orderId, "completed")}>
+                              Mark as Completed
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order.orderId, "rejected")}>
+                              Mark as Rejected
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link href={`/admin/orders/${order.orderId}`}>View Details</Link>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>

@@ -91,7 +91,8 @@ namespace ECommerceApi.Controllers
                     ImageUrl = products.ContainsKey(i.ProductId) ? products[i.ProductId].ImageUrl : "",
                     ColorName = i.ColorOptionId.HasValue && colors.ContainsKey(i.ColorOptionId.Value) ? colors[i.ColorOptionId.Value].Name : null,
                     Description = i.Description,
-                    Quantity = i.Quantity
+                    Quantity = i.Quantity,
+                    Price = i.Product.Price
                 }).ToList()
             };
 
@@ -126,7 +127,8 @@ namespace ECommerceApi.Controllers
                     ImageUrl = i.Product.ImageUrl,
                     ColorName = i.ColorOption?.Name,
                     Description = i.Description,
-                    Quantity = i.Quantity
+                    Quantity = i.Quantity,
+                    Price = i.Product.Price
                 }).ToList(),
 
                 // ✅ Fatura adres bilgileri
@@ -168,7 +170,8 @@ namespace ECommerceApi.Controllers
                     ImageUrl = i.Product.ImageUrl,
                     ColorName = i.ColorOption?.Name,
                     Description = i.Description,
-                    Quantity = i.Quantity
+                    Quantity = i.Quantity,
+                    Price = i.Product.Price
                 }).ToList(),
 
                 // ✅ fatura adresi bilgilerini ekle

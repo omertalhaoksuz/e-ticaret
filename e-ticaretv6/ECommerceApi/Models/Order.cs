@@ -11,7 +11,7 @@ namespace ECommerceApi.Models
         public User User { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public string Status { get; set; } = "Aktif"; // Aktif, Tamamlandı, Reddedildi
+        public string Status { get; set; } = "Pending"; // status
 
         public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
         // 🟨  Adres

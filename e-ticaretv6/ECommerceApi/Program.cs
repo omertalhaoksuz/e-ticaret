@@ -14,12 +14,12 @@ using ECommerceApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔐 CORS tanımı (önce tanımlanır)
+// 🔐 CORS Tanımı (önce tanımlanır)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173") // Vue dev server
+        policy.WithOrigins("http://localhost:3000") // Vue dev server
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -30,7 +30,16 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Identity
-builder.Services.AddIdentity<User, IdentityRole>()
+builder.Services.AddIdentity<User, IdentityRole>(options =>
+{
+    // Password policy settings
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequiredLength = 6;
+    options.Password.RequiredUniqueChars = 1;
+})
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
@@ -53,6 +62,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Authorization
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

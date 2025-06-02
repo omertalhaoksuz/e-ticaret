@@ -10,7 +10,6 @@ namespace ECommerceApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")]
     public class ColorController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -20,16 +19,17 @@ namespace ECommerceApi.Controllers
             _context = context;
         }
 
-        // ✅ Tüm renkleri getir
+        // ✅ Herkes renkleri görebilir
         [HttpGet]
-        [Authorize] //herkes renkleri görsün
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<ColorOption>>> GetAll()
         {
             return await _context.ColorOptions.ToListAsync();
         }
 
-        // ✅ Yeni renk ekle
+        // ✅ Yeni renk ekle (sadece Admin)
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create(ColorOption color)
         {
             if (string.IsNullOrWhiteSpace(color.Name))
@@ -40,8 +40,9 @@ namespace ECommerceApi.Controllers
             return Ok(color);
         }
 
-        // ✅ Renk sil
+        // ✅ Renk sil (sadece Admin)
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var color = await _context.ColorOptions.FindAsync(id);

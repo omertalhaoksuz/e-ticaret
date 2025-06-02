@@ -10,6 +10,7 @@ namespace ECommerceApi.Dtos
         public string UserFullName { get; set; }
         public string Status { get; set; }
         public DateTime CreatedAt { get; set; }
+        public decimal Price { get; set; }
 
         public List<OrderItemDto> Items { get; set; } = new();
         // ✅ Fatura adresi detayları
