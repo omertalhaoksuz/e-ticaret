@@ -59,8 +59,10 @@ export default function AdminOrdersPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (rawStatus: string) => {
+    const status = rawStatus?.trim().toLowerCase(); // normalize edilmiş hali
     const baseClass = "flex items-center gap-1";
+
     switch (status) {
       case "pending":
         return (
@@ -91,7 +93,7 @@ export default function AdminOrdersPage() {
           </Badge>
         );
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return <Badge variant="secondary">{rawStatus}</Badge>;
     }
   };
 
@@ -136,7 +138,10 @@ export default function AdminOrdersPage() {
               </thead>
               <tbody>
                 {orders
-                  .filter(order => statusFilter === "all" || order.status === statusFilter)
+                  .filter(order =>
+                    statusFilter === "all" ||
+                    order.status?.trim().toLowerCase() === statusFilter.toLowerCase()
+                  )
                   .map((order) => (
                     <tr key={order.orderId}>
                       <td className="px-4 py-2">{order.orderId}</td>

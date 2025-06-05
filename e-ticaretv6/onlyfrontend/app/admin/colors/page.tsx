@@ -1,44 +1,54 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { X, Plus } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-
-// Mock color data
-const initialColors = [
-  { id: 1, name: "Red", hex: "#FF0000" },
-  { id: 2, name: "Blue", hex: "#0000FF" },
-  { id: 3, name: "Green", hex: "#00FF00" },
-  { id: 4, name: "Yellow", hex: "#FFFF00" },
-  { id: 5, name: "Black", hex: "#000000" },
-  { id: 6, name: "White", hex: "#FFFFFF" },
-]
+import { getColors, createColor, deleteColor, ColorDto } from "@/services/color"
+import { toast } from "react-toastify"
 
 export default function ColorsPage() {
-  const [colors, setColors] = useState(initialColors)
+  const [colors, setColors] = useState<ColorDto[]>([])
   const [newColorName, setNewColorName] = useState("")
   const [newColorHex, setNewColorHex] = useState("#000000")
 
-  const handleAddColor = () => {
-    if (!newColorName.trim()) return
+  useEffect(() => {
+    loadColors()
+  }, [])
 
-    const newColor = {
-      id: colors.length > 0 ? Math.max(...colors.map((c) => c.id)) + 1 : 1,
-      name: newColorName,
-      hex: newColorHex,
+  const loadColors = async () => {
+    try {
+      const data = await getColors()
+      setColors(data)
+    } catch (err: any) {
+      toast.error(err.message || "Failed to load colors")
     }
-
-    setColors([...colors, newColor])
-    setNewColorName("")
-    setNewColorHex("#000000")
   }
 
-  const handleDeleteColor = (id: number) => {
-    setColors(colors.filter((color) => color.id !== id))
+  const handleAddColor = async () => {
+    if (!newColorName.trim()) return
+
+    try {
+      await createColor({ name: newColorName, hex: newColorHex })
+      toast.success("Color added!")
+      setNewColorName("")
+      setNewColorHex("#000000")
+      loadColors()
+    } catch (err: any) {
+      toast.error(err.message || "Failed to add color")
+    }
+  }
+
+  const handleDeleteColor = async (id: number) => {
+    try {
+      await deleteColor(id)
+      toast.success("Color deleted!")
+      loadColors()
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete color")
+    }
   }
 
   return (
@@ -93,7 +103,7 @@ export default function ColorsPage() {
         </CardHeader>
         <CardContent>
           {colors.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">No colors added yet. Add your first color above.</p>
+            <p className="text-center py-8 text-muted-foreground">No colors added yet.</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {colors.map((color) => (
@@ -108,11 +118,10 @@ export default function ColorsPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleDeleteColor(color.id)}
+                    onClick={() => handleDeleteColor(color.id!)}
                     className="text-destructive hover:text-destructive"
                   >
                     <X className="h-4 w-4" />
-                    <span className="sr-only">Delete {color.name}</span>
                   </Button>
                 </div>
               ))}

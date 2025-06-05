@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ECommerceApi.Controllers
@@ -45,13 +46,21 @@ namespace ECommerceApi.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
-            var color = await _context.ColorOptions.FindAsync(id);
+            var color = await _context.ColorOptions
+                .Include(c => c.ProductColorOptions)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
             if (color == null)
                 return NotFound();
 
+            if (color.ProductColorOptions != null && color.ProductColorOptions.Any())
+                return BadRequest("Bu renk en az bir ürünle ilişkilidir ve silinemez.");
+
             _context.ColorOptions.Remove(color);
             await _context.SaveChangesAsync();
+
             return NoContent();
         }
+
     }
 }

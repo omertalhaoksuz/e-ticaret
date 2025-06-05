@@ -11,43 +11,71 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { getProducts } from "@/services/admin";
+import { getColors } from "@/services/color";
+import { Input } from "@/components/ui/input";
+import { addToCart } from "@/services/cart";
+import { useAuth } from "@/contexts/AuthContext";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Home() {
   const [products, setProducts] = useState<any[]>([]);
+  const [colors, setColors] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [selectedColor, setSelectedColor] = useState<string>("");
+  const [userDescription, setUserDescription] = useState<string>("");
+  const [selectedColorId, setSelectedColorId] = useState<number | undefined>();
+  const [quantity, setQuantity] = useState<number>(1);
+  const { token } = useAuth();
 
   useEffect(() => {
-    getProducts("").then((data) => {
-      const filtered = data.filter((p: any) => p.showOnHome);
-      setProducts(filtered);
-    });
+    getProducts("")
+      .then((data) => {
+        const filtered = data.filter((p: any) => p.showOnHome);
+        setProducts(filtered);
+      })
+      .catch(console.error);
+
+    getColors()
+      .then((data) => {
+        console.log("Colors fetched:", data);
+        setColors(data);
+      })
+      .catch(console.error);
   }, []);
 
   const openProductModal = (product: any) => {
     setSelectedProduct(product);
-    setSelectedColor(product.colors?.[0] || "");
+    setUserDescription("");
+    setSelectedColorId(undefined);
+    setQuantity(1);
   };
 
   const closeProductModal = () => {
     setSelectedProduct(null);
-    setSelectedColor("");
+    setUserDescription("");
+    setSelectedColorId(undefined);
+    setQuantity(1);
   };
 
-  const addToCart = () => {
-    alert(
-      `Added ${selectedProduct.name} to cart${selectedColor ? ` in ${selectedColor}` : ""}`
-    );
-    closeProductModal();
+  const handleAddToCart = async () => {
+    if (!selectedProduct || !token) return;
+
+    try {
+      await addToCart(
+        {
+          productId: selectedProduct.id,
+          colorOptionId: selectedColorId,
+          description: userDescription,
+          quantity,
+        },
+        token
+      );
+      alert("Product added to cart!");
+      closeProductModal();
+    } catch (err) {
+      alert("Failed to add to cart.");
+    }
   };
 
   const getImageUrl = (url: string | undefined) => {
@@ -55,6 +83,15 @@ export default function Home() {
     if (url.startsWith("/uploads/")) return `https://localhost:7082${url}`;
     return url;
   };
+
+  const productColors = selectedProduct
+    ? colors.filter((color: any) =>
+        !color.productColorOptions ||
+        color.productColorOptions.some(
+          (pco: any) => pco.productId === selectedProduct.id
+        )
+      )
+    : [];
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -64,9 +101,7 @@ export default function Home() {
             <h1 className="text-4xl font-bold mb-4">Welcome to 3D Print Hub</h1>
             <p className="text-lg mb-6">
               We provide high-quality 3D printing services and products for
-              professionals, hobbyists, and businesses. With our state-of-the-art
-              equipment and expert team, we deliver exceptional results for all
-              your 3D printing needs.
+              professionals, hobbyists, and businesses.
             </p>
             <Button size="lg">Learn More</Button>
           </div>
@@ -132,29 +167,77 @@ export default function Home() {
                 />
               </div>
               <div className="flex flex-col">
-                <h3 className="font-bold text-xl mb-2">{selectedProduct?.name}</h3>
-                <p className="font-bold text-lg mb-4">${selectedProduct?.price?.toFixed(2)}</p>
-                {selectedProduct?.colors?.length > 0 && (
+                <h3 className="font-bold text-xl mb-2">
+                  {selectedProduct?.name}
+                </h3>
+                <p className="font-bold text-lg mb-4">
+                  ${selectedProduct?.price?.toFixed(2)}
+                </p>
+
+                {productColors.length > 0 ? (
                   <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">Color</label>
-                    <Select value={selectedColor} onValueChange={setSelectedColor}>
-                      <SelectTrigger>
+                    <label className="block text-sm font-medium mb-2">
+                      Choose a Color
+                    </label>
+                    <Select
+                      value={selectedColorId?.toString()}
+                      onValueChange={(val) => setSelectedColorId(parseInt(val))}
+                    >
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select a color" />
                       </SelectTrigger>
                       <SelectContent>
-                        {selectedProduct.colors.map((color: string) => (
-                          <SelectItem key={color} value={color}>
-                            {color}
+                        {productColors.map((color: any) => (
+                          <SelectItem key={color.id} value={color.id.toString()}>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="w-4 h-4 rounded-full border"
+                                style={{ backgroundColor: color.hex }}
+                              />
+                              {color.name}
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
+                ) : (
+                  <p className="text-sm italic text-red-600 mb-4">
+                    No color options available. Please specify your desired color in the description.
+                  </p>
                 )}
-                <DialogDescription className="mb-4">
-                  {selectedProduct?.description}
-                </DialogDescription>
-                <Button className="mt-auto" onClick={addToCart}>
+
+                <label
+                  htmlFor="user-description"
+                  className="block text-sm font-medium mb-2"
+                >
+                  Your Description
+                </label>
+                <textarea
+                  id="user-description"
+                  rows={3}
+                  className="w-full rounded-md border border-gray-300 p-2 mb-4"
+                  placeholder="Write your description or notes here..."
+                  value={userDescription}
+                  onChange={(e) => setUserDescription(e.target.value)}
+                />
+
+                <label
+                  htmlFor="quantity"
+                  className="block text-sm font-medium mb-2"
+                >
+                  Quantity
+                </label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min={1}
+                  value={quantity}
+                  onChange={(e) => setQuantity(parseInt(e.target.value))}
+                  className="mb-4"
+                />
+
+                <Button className="mt-auto" onClick={handleAddToCart}>
                   Add to Cart
                 </Button>
               </div>

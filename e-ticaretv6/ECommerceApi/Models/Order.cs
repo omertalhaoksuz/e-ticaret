@@ -9,6 +9,7 @@ namespace ECommerceApi.Models
 
         public string UserId { get; set; }
         public User User { get; set; }
+        
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public string Status { get; set; } = "Pending"; // status

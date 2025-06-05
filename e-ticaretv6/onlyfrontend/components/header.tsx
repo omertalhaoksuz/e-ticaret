@@ -1,11 +1,18 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { ShoppingCart, ChevronDown } from "lucide-react"
-import { useAuth } from "@/contexts/AuthContext"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import Link from "next/link";
+import { ShoppingCart, ChevronDown } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useEffect, useState } from "react";
+import { getCartItems } from "@/services/cart";
 
 const categories = [
   {
@@ -48,12 +55,22 @@ const categories = [
       { id: 10, name: "3D Modeling Service" },
     ],
   },
-]
+];
 
 export default function Header() {
-  const { user, logout } = useAuth()
-  const isLoggedIn = !!user
-  const isAdmin = user?.role === "Admin"
+  const { user, token, logout } = useAuth();
+  const isLoggedIn = !!user;
+  const isAdmin = user?.role === "Admin";
+
+  const [cartCount, setCartCount] = useState(0);
+
+  useEffect(() => {
+    if (!token) return;
+
+    getCartItems(token)
+      .then((items) => setCartCount(items.length))
+      .catch(() => setCartCount(0));
+  }, [token]);
 
   return (
     <header className="border-b">
@@ -121,9 +138,11 @@ export default function Header() {
                 <Link href="/cart">
                   <Button variant="ghost" className="relative">
                     <ShoppingCart className="h-5 w-5" />
-                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
-                      3
-                    </span>
+                    {cartCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                        {cartCount}
+                      </span>
+                    )}
                   </Button>
                 </Link>
               </>
@@ -141,5 +160,5 @@ export default function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }

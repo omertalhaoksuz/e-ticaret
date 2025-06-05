@@ -4,9 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import {
   getProducts,
   deleteProduct,
-  createProduct,
   updateProduct,
   updateFeaturedStatus,
+  createProduct,
 } from "@/services/admin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +17,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 
 export default function AdminProductPage() {
@@ -32,7 +32,7 @@ export default function AdminProductPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { token } = useAuth();
 
   useEffect(() => {
@@ -49,7 +49,6 @@ export default function AdminProductPage() {
     setNewProduct({ name: "", price: 0, description: "", featured: false });
     setImageFile(null);
     if (imageInputRef.current) imageInputRef.current.value = "";
-    setShowModal(false);
   };
 
   const handleDeleteProduct = async (id: number) => {
@@ -70,67 +69,59 @@ export default function AdminProductPage() {
       description: product.description,
       featured: product.showOnHome,
     });
-    setShowModal(true);
+    setIsModalOpen(true);
+  };
+
+  const handleAddClick = () => {
+    resetForm();
+    setIsModalOpen(true);
   };
 
   const handleSubmit = async () => {
     if (!token) return;
 
     if (editingProduct) {
-      try {
-        await updateProduct(
-          editingProduct.id,
-          {
-            name: newProduct.name,
-            price: newProduct.price,
-            description: newProduct.description,
-          },
-          token
-        );
-        await updateFeaturedStatus(
-          editingProduct.id,
-          newProduct.featured,
-          token
-        );
+      const formData = new FormData();
+      formData.append("name", newProduct.name);
+      formData.append("price", newProduct.price.toString());
+      formData.append("description", newProduct.description);
+      if (imageFile) formData.append("image", imageFile);
 
-        setProducts(
-          products.map((p) =>
-            p.id === editingProduct.id
-              ? {
-                  ...p,
-                  name: newProduct.name,
-                  price: newProduct.price,
-                  description: newProduct.description,
-                  showOnHome: newProduct.featured,
-                }
-              : p
-          )
-        );
+      try {
+        const res = await fetch(`https://localhost:7082/api/Product/update/${editingProduct.id}`, {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+
+        if (!res.ok) throw new Error("Güncelleme başarısız");
+        const updated = await res.json();
+
+        await updateFeaturedStatus(editingProduct.id, newProduct.featured, token);
+
+        setProducts(products.map((p) =>
+          p.id === editingProduct.id
+            ? { ...p, ...updated, showOnHome: newProduct.featured }
+            : p
+        ));
+
+        setIsModalOpen(false);
         resetForm();
       } catch {
         alert("Güncelleme başarısız");
       }
     } else {
-      if (!imageFile) {
-        alert("Lütfen ürün görseli seçin.");
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("name", newProduct.name);
-      formData.append("price", newProduct.price.toString());
-      formData.append("description", newProduct.description);
-      formData.append("image", imageFile);
+      if (!imageFile) return alert("Lütfen görsel seçin.");
 
       try {
-        const res = await fetch("https://localhost:7082/api/Product/upload", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: formData,
-        });
-
-        if (!res.ok) throw new Error("Ürün oluşturulamadı");
-        const created = await res.json();
+        const created = await createProduct(
+          {
+            ...newProduct,
+            image: imageFile,
+            colorOptionIds: [],
+          },
+          token
+        );
 
         if (newProduct.featured) {
           await updateFeaturedStatus(created.id, true, token);
@@ -138,6 +129,7 @@ export default function AdminProductPage() {
         }
 
         setProducts([...products, created]);
+        setIsModalOpen(false);
         resetForm();
       } catch {
         alert("Ürün eklenemedi.");
@@ -149,11 +141,7 @@ export default function AdminProductPage() {
     if (!token) return;
     try {
       await updateFeaturedStatus(id, !current, token);
-      setProducts(
-        products.map((p) =>
-          p.id === id ? { ...p, showOnHome: !current } : p
-        )
-      );
+      setProducts(products.map(p => p.id === id ? { ...p, showOnHome: !current } : p));
     } catch {
       alert("Featured güncellenemedi");
     }
@@ -161,9 +149,9 @@ export default function AdminProductPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Product Management</h1>
-        <Button onClick={() => setShowModal(true)}>+ Add Product</Button>
+        <Button onClick={handleAddClick}>Add Product</Button>
       </div>
 
       <Card>
@@ -200,31 +188,19 @@ export default function AdminProductPage() {
                   <td className="p-2">{product.description}</td>
                   <td className="p-2">
                     <button
-                      onClick={() =>
-                        toggleFeatured(product.id, product.showOnHome)
-                      }
-                      className={`text-xs px-2 py-1 rounded ${
-                        product.showOnHome
-                          ? "bg-green-200 text-green-800"
-                          : "bg-gray-200 text-gray-800"
-                      }`}
+                      onClick={() => toggleFeatured(product.id, product.showOnHome)}
+                      className={`text-xs px-2 py-1 rounded ${product.showOnHome
+                        ? "bg-green-200 text-green-800"
+                        : "bg-gray-200 text-gray-800"}`}
                     >
                       {product.showOnHome ? "Yes" : "No"}
                     </button>
                   </td>
                   <td className="p-2 space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleEditClick(product)}
-                    >
+                    <Button size="sm" variant="outline" onClick={() => handleEditClick(product)}>
                       Edit
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleDeleteProduct(product.id)}
-                    >
+                    <Button size="sm" variant="destructive" onClick={() => handleDeleteProduct(product.id)}>
                       Delete
                     </Button>
                   </td>
@@ -235,13 +211,12 @@ export default function AdminProductPage() {
         </CardContent>
       </Card>
 
-      {/* Modal for Create/Edit Product */}
-      <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingProduct ? "Edit Product" : "Create Product"}</DialogTitle>
+            <DialogTitle>{editingProduct ? "Edit Product" : "Add Product"}</DialogTitle>
+            <DialogClose />
           </DialogHeader>
-
           <div className="space-y-4">
             <Input
               placeholder="Product Name"
@@ -259,21 +234,30 @@ export default function AdminProductPage() {
             <Input
               placeholder="Description"
               value={newProduct.description}
-              onChange={(e) =>
-                setNewProduct({ ...newProduct, description: e.target.value })
-              }
+              onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
             />
-            {!editingProduct && (
-              <Input
-                type="file"
-                accept="image/*"
-                ref={imageInputRef}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) setImageFile(file);
-                }}
-              />
+            {editingProduct && (
+              <div className="flex items-center space-x-4">
+                <img
+                  src={`https://localhost:7082${editingProduct.imageUrl}`}
+                  alt="Current"
+                  className="h-20 w-20 object-cover border rounded"
+                  onError={(e) =>
+                    ((e.target as HTMLImageElement).src = "/fallback.jpg")
+                  }
+                />
+                <span className="text-sm text-gray-500">Current Image</span>
+              </div>
             )}
+            <Input
+              type="file"
+              accept="image/*"
+              ref={imageInputRef}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) setImageFile(file);
+              }}
+            />
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
@@ -284,16 +268,15 @@ export default function AdminProductPage() {
               />
               <label>Show on Homepage</label>
             </div>
+            <div className="flex gap-2">
+              <Button onClick={handleSubmit}>
+                {editingProduct ? "Update Product" : "Create Product"}
+              </Button>
+              <Button onClick={() => { setIsModalOpen(false); resetForm(); }} variant="secondary">
+                Cancel
+              </Button>
+            </div>
           </div>
-
-          <DialogFooter className="mt-4">
-            <Button onClick={handleSubmit}>
-              {editingProduct ? "Update" : "Create"}
-            </Button>
-            <Button variant="ghost" onClick={resetForm}>
-              Cancel
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

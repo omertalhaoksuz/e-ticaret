@@ -22,16 +22,20 @@ export interface CreateOrderDto {
   billingAddressId: number;
 }
 
-export async function createOrder(data: CreateOrderDto, token: string): Promise<void> {
-  const res = await fetch('/api/Order/create', {
-    method: 'POST',
-    headers: { 
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}` 
+export async function createOrder(data: any, token: string): Promise<void> {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/Order/create`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Failed to create order');
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(errText || "Failed to create order");
+  }
 }
 
 export async function getMyOrders(token: string): Promise<OrderDto[]> {

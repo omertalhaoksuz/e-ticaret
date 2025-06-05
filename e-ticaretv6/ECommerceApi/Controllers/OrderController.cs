@@ -324,7 +324,8 @@ namespace ECommerceApi.Controllers
                     ProductName = i.Product.Name,
                     Price = i.Product.Price,
                     Quantity = i.Quantity,
-                    Color = i.ColorOption?.Name
+                    Color = i.ColorOption?.Name,
+                     Description = i.Description // ✅ NOT
                 }).ToList(),
                 BillingFullName = billingAddress?.FullName,
                 BillingPhone = billingAddress?.Phone,

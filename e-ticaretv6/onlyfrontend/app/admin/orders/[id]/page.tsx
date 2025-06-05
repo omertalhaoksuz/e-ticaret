@@ -9,6 +9,7 @@ interface InvoiceItem {
   price: number;
   quantity: number;
   color?: string;
+  description?: string;
 }
 
 interface Invoice {
@@ -26,13 +27,14 @@ interface Invoice {
 }
 
 export default function OrderDetailPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const { token } = useAuth();
 
   useEffect(() => {
     if (!token) return;
 
-    fetch(`https://localhost:7082/api/Order/${params.id}/invoice`, {
+    fetch(`https://localhost:7082/api/Order/${id}/invoice`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -40,7 +42,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
       .then((res) => res.json())
       .then(setInvoice)
       .catch(() => alert("Failed to load invoice"));
-  }, [params.id, token]);
+  }, [id, token]);
 
   if (!invoice) return <div className="p-6">Loading...</div>;
 
@@ -57,10 +59,13 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
         <p><strong>Order Date:</strong> {new Date(invoice.orderDate).toLocaleString()}</p>
         <hr className="my-4" />
         <h3 className="text-lg font-semibold">Items</h3>
-        <ul className="mb-4">
+        <ul className="mb-4 space-y-2">
           {invoice.items.map((item, index) => (
-            <li key={index}>
-              {item.productName} - {item.color ?? "No Color"} - {item.quantity} x ${item.price.toFixed(2)}
+            <li key={index} className="text-sm">
+              <strong>{item.productName}</strong> — {item.color ?? "No Color"} — {item.quantity} x ${item.price.toFixed(2)}
+              {item.description && (
+                <p className="text-muted-foreground italic mt-1">Note: {item.description}</p>
+              )}
             </li>
           ))}
         </ul>

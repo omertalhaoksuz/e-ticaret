@@ -47,7 +47,14 @@ namespace ECommerceApi.Controllers
             await _userManager.AddToRoleAsync(user, user.Role);
 
             var token = JwtTokenGenerator.GenerateToken(user, _config);
-            return Ok(new { token });
+            return Ok(new
+            {
+                token,
+                fullName = user.FullName,
+                email = user.Email,
+                role = user.Role,
+                id = user.Id
+            });
         }
 
         [HttpPost("login")]
@@ -62,8 +69,16 @@ namespace ECommerceApi.Controllers
                 return Unauthorized("Şifre hatalı.");
 
             var token = JwtTokenGenerator.GenerateToken(user, _config);
-            return Ok(new { token });
+            return Ok(new
+            {
+                token,
+                fullName = user.FullName,
+                email = user.Email,
+                role = user.Role,
+                id = user.Id
+            });
         }
+
         [Authorize]
         [HttpPut("update")]
         public async Task<IActionResult> UpdateProfile(UpdateProfileDto dto)
@@ -86,5 +101,23 @@ namespace ECommerceApi.Controllers
             return Ok("Profil güncellendi.");
         }
 
+        [Authorize]
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword(ChangePasswordDto dto)
+        {
+            var userId = User.FindFirst("id")?.Value;
+            if (userId == null)
+                return Unauthorized();
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return NotFound("Kullanıcı bulunamadı.");
+
+            var result = await _userManager.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
+            if (!result.Succeeded)
+                return BadRequest(result.Errors);
+
+            return Ok("Şifre başarıyla değiştirildi.");
+        }
     }
 }

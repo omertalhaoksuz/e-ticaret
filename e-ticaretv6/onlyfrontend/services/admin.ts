@@ -148,7 +148,23 @@ export async function updateFeaturedStatus(productId: number, featured: boolean,
     const err = await res.text();
     throw new Error(err || "Featured durumu güncellenemedi");
   }
+  
 
   return true;
+  
 }
+// ✅ Admin istatistiklerini getir (toplam, bugün, ay, yıl)
+export async function getAdminStats(token: string) {
+  return fetchWithAuth("/Order/admin-stats", token);
+}
+
+// ✅ Belirli tarih aralığına göre özel istatistik getir
+export async function getCustomStats(startDate: string, endDate: string, token: string) {
+  return fetchWithAuth("/Order/custom-stats", token, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ startDate, endDate }),
+  });
+}
+
 

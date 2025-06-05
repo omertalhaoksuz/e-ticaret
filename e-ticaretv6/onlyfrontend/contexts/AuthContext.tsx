@@ -10,8 +10,10 @@ import React, {
 import { jwtDecode } from "jwt-decode"
 
 interface User {
-  email: string
-  role: string
+  id: string
+  fullName?: string
+  email?: string
+  role?: string
   [key: string]: any
 }
 
@@ -41,14 +43,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setTokenState(newToken)
       try {
         const decoded: any = jwtDecode(newToken)
-        const role =
-          decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]
-        setUser({ ...decoded, role })
+        const userData: User = {
+          id: decoded["id"],
+          fullName: decoded["fullName"],
+          email: decoded["email"] ?? decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"],
+          role:
+            decoded[
+              "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+            ],
+        }
+        setUser(userData)
+        localStorage.setItem("user", JSON.stringify(userData))
       } catch {
         setUser(null)
+        localStorage.removeItem("user")
       }
     } else {
       localStorage.removeItem("token")
+      localStorage.removeItem("user")
       setTokenState(null)
       setUser(null)
     }

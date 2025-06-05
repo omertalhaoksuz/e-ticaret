@@ -1,11 +1,9 @@
-// User, LoginDto, RegisterDto, UpdateProfileDto ve ChangePasswordDto gibi interface'leri dışa aktarıyoruz.
 export interface User {
   id: string;
   fullName?: string;
   role?: string;
   email?: string;
   token?: string;
-  // Diğer alanlar (örneğin: profil fotoğrafı, adres vs.)
 }
 
 export interface LoginDto {
@@ -30,74 +28,94 @@ export interface ChangePasswordDto {
   newPassword: string;
 }
 
-// Login işlemi
+// ✅ Login işlemi
 export async function login(data: LoginDto): Promise<User> {
-  const res = await fetch('https://localhost:7082/api/Auth/login', {  // Backend API URL'ini doğru olarak ayarlıyoruz
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await fetch("https://localhost:7082/api/Auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
 
   if (!res.ok) {
     const err = await res.json();
-    throw new Error(err.message || 'Login failed');
+    throw new Error(err.message || "Login failed");
   }
 
-  // Token'ı backend'den alıp, kullanıcının bilgilerini döndürüyoruz
-  const user: User = await res.json();
-  localStorage.setItem('token', user.token!);  // Token'ı localStorage'a kaydediyoruz
-  return user;  // Kullanıcıyı döndürüyoruz
+  const result = await res.json();
+
+  const user: User = {
+    id: result.id,
+    fullName: result.fullName,
+    email: result.email,
+    role: result.role,
+    token: result.token,
+  };
+
+  localStorage.setItem("token", user.token!);
+  localStorage.setItem("user", JSON.stringify(user));
+
+  return user;
 }
 
-// Register işlemi
+// ✅ Register işlemi
 export async function register(data: RegisterDto): Promise<User> {
-  const res = await fetch('https://localhost:7082/api/Auth/register', {  // Backend API URL'ini doğru olarak ayarlıyoruz
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await fetch("https://localhost:7082/api/Auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
 
   if (!res.ok) {
     const err = await res.json();
-    throw new Error(err.message || 'Registration failed');
+    throw new Error(err.message || "Registration failed");
   }
 
-  // Token'ı backend'den alıp, kullanıcının bilgilerini döndürüyoruz
-  const user: User = await res.json();
-  localStorage.setItem('token', user.token!);  // Token'ı localStorage'a kaydediyoruz
-  return user;  // Kullanıcıyı döndürüyoruz
+  const result = await res.json();
+
+  const user: User = {
+    id: result.id,
+    fullName: result.fullName,
+    email: result.email,
+    role: result.role,
+    token: result.token,
+  };
+
+  localStorage.setItem("token", user.token!);
+  localStorage.setItem("user", JSON.stringify(user));
+
+  return user;
 }
 
-// Profile güncelleme
+// Profil güncelleme
 export async function updateProfile(data: UpdateProfileDto, token: string): Promise<void> {
-  const res = await fetch('https://localhost:7082/api/Auth/update', {  // Backend API URL'ini doğru olarak ayarlıyoruz
-    method: 'PUT',
-    headers: { 
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`  // Token'ı Authorization header'ına ekliyoruz
+  const res = await fetch("https://localhost:7082/api/Auth/update", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(data),
   });
 
   if (!res.ok) {
     const err = await res.json();
-    throw new Error(err.message || 'Profile update failed');
+    throw new Error(err.message || "Profile update failed");
   }
 }
 
 // Şifre değiştirme
 export async function changePassword(data: ChangePasswordDto, token: string): Promise<void> {
-  const res = await fetch('https://localhost:7082/api/Auth/change-password', {  // Backend API URL'ini doğru olarak ayarlıyoruz
-    method: 'POST',
-    headers: { 
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`  // Token'ı Authorization header'ına ekliyoruz
+  const res = await fetch("https://localhost:7082/api/Auth/change-password", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(data),
   });
 
   if (!res.ok) {
     const err = await res.json();
-    throw new Error(err.message || 'Password change failed');
+    throw new Error(err.message || "Password change failed");
   }
 }

@@ -78,6 +78,12 @@ export default function CartPage() {
     router.push("/checkout");
   };
 
+  const getImageUrl = (url?: string) => {
+    if (!url) return "/placeholder.svg";
+    if (url.startsWith("/uploads/")) return `https://localhost:7082${url}`;
+    return url;
+  };
+
   if (loading) return <div className="p-8 text-center">Loading cart...</div>;
 
   return (
@@ -109,17 +115,23 @@ export default function CartPage() {
                     <li key={item.id} className="py-4 flex items-center">
                       <div className="flex-shrink-0 mr-4">
                         <Image
-                          src={item.product.imageUrl || "/placeholder.svg"}
+                          src={getImageUrl(item.product.imageUrl)}
                           alt={item.product.name}
                           width={80}
                           height={80}
-                          className="rounded-md"
+                          className="rounded-md object-cover"
                         />
                       </div>
 
                       <div className="flex-grow">
                         <h3 className="font-medium">{item.product.name}</h3>
                         <p className="text-muted-foreground">${item.product.price.toFixed(2)}</p>
+
+                        {item.description && (
+                          <p className="text-sm text-gray-500 italic mt-1">
+                            Note: {item.description}
+                          </p>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-4">
