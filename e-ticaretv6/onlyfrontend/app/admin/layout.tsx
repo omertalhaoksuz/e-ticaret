@@ -57,7 +57,12 @@ export default function AdminLayout({
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
 
-  const links = [
+  const links: {
+    title: string
+    icon: React.ComponentType<{ className?: string }>
+    variant: "default" | "ghost"
+    href: string
+  }[] = [
     {
       title: "Dashboard",
       icon: LayoutDashboard,
@@ -87,6 +92,12 @@ export default function AdminLayout({
       icon: FileText,
       variant: "ghost",
       href: "/admin/pages",
+    },
+    {
+      title: "Menus",
+      icon: Menu,
+      variant: "ghost",
+      href: "/admin/menus",
     },
   ]
 

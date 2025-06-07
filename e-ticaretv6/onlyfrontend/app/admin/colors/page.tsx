@@ -47,7 +47,11 @@ export default function ColorsPage() {
       toast.success("Color deleted!")
       loadColors()
     } catch (err: any) {
-      toast.error(err.message || "Failed to delete color")
+      if (err.response?.status === 500) {
+        toast.error("This color is assigned to a product and cannot be deleted.")
+      } else {
+        toast.error(err.message || "Failed to delete color")
+      }
     }
   }
 

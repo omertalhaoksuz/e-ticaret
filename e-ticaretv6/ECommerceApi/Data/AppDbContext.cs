@@ -16,8 +16,8 @@ namespace ECommerceApi.Data
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<OrderStatusHistory> OrderStatusHistories { get; set; }
         public DbSet<Address> Addresses { get; set; }
-
-
+        public DbSet<Menu> Menus { get; set; }
+        public DbSet<SubMenu> SubMenus { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -41,9 +41,11 @@ namespace ECommerceApi.Data
             modelBuilder.Entity<Product>()
                 .Property(p => p.Price)
                 .HasPrecision(18, 2);
+
+            // CartItem ilişkileri
             modelBuilder.Entity<CartItem>()
                 .HasOne(ci => ci.User)
-                 .WithMany()
+                .WithMany()
                 .HasForeignKey(ci => ci.UserId);
 
             modelBuilder.Entity<CartItem>()
@@ -56,13 +58,34 @@ namespace ECommerceApi.Data
                 .WithMany()
                 .HasForeignKey(ci => ci.ColorOptionId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            // Order → Address
             modelBuilder.Entity<Order>()
                 .HasOne(o => o.BillingAddress)
                 .WithMany()
                 .HasForeignKey(o => o.BillingAddressId)
-                .OnDelete(DeleteBehavior.SetNull); // Adres silinirse, sipariş bozulmasın
+                .OnDelete(DeleteBehavior.SetNull);
 
+            // Product → Menu
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.Menu)
+                .WithMany(m => m.Products)
+                .HasForeignKey(p => p.MenuId)
+                .OnDelete(DeleteBehavior.SetNull);
 
+            // Product → SubMenu
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.SubMenu)
+                .WithMany(s => s.Products)
+                .HasForeignKey(p => p.SubMenuId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // SubMenu → Menu
+            modelBuilder.Entity<SubMenu>()
+                .HasOne(s => s.Menu)
+                .WithMany(m => m.SubMenus)
+                .HasForeignKey(s => s.MenuId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

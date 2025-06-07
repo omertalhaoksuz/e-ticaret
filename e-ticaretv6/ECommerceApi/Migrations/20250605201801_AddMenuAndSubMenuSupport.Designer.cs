@@ -4,6 +4,7 @@ using ECommerceApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ECommerceApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250605201801_AddMenuAndSubMenuSupport")]
+    partial class AddMenuAndSubMenuSupport
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -178,6 +181,9 @@ namespace ECommerceApi.Migrations
                     b.Property<string>("ColorName")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("ColorOptionId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
@@ -194,6 +200,8 @@ namespace ECommerceApi.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ColorOptionId");
 
                     b.HasIndex("OrderId");
 
@@ -585,6 +593,10 @@ namespace ECommerceApi.Migrations
 
             modelBuilder.Entity("ECommerceApi.Models.OrderItem", b =>
                 {
+                    b.HasOne("ECommerceApi.Models.ColorOption", "ColorOption")
+                        .WithMany()
+                        .HasForeignKey("ColorOptionId");
+
                     b.HasOne("ECommerceApi.Models.Order", "Order")
                         .WithMany("Items")
                         .HasForeignKey("OrderId")
@@ -596,6 +608,8 @@ namespace ECommerceApi.Migrations
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("ColorOption");
 
                     b.Navigation("Order");
 
@@ -623,13 +637,11 @@ namespace ECommerceApi.Migrations
                 {
                     b.HasOne("ECommerceApi.Models.Menu", "Menu")
                         .WithMany("Products")
-                        .HasForeignKey("MenuId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("MenuId");
 
                     b.HasOne("ECommerceApi.Models.SubMenu", "SubMenu")
                         .WithMany("Products")
-                        .HasForeignKey("SubMenuId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("SubMenuId");
 
                     b.Navigation("Menu");
 

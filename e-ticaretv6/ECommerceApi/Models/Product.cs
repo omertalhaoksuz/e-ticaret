@@ -19,5 +19,11 @@ namespace ECommerceApi.Models
         public bool ShowOnButton3 { get; set; } = false;
         public bool ShowOnButton4 { get; set; } = false;
         public bool ShowOnButton5 { get; set; } = false;
+        public int? MenuId { get; set; } // doğrudan menüye atanmışsa
+        public Menu? Menu { get; set; }
+
+        public int? SubMenuId { get; set; } // alt menüye atanmışsa
+        public SubMenu? SubMenu { get; set; }
+
     }
 }

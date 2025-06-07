@@ -10,8 +10,7 @@
         public int ProductId { get; set; }
         public Product Product { get; set; }
 
-        public int? ColorOptionId { get; set; }
-        public ColorOption? ColorOption { get; set; }
+      
 
         // ✅ Eklenen alanlar — renk sabit olarak kopyalanır
         public string ColorName { get; set; } = string.Empty;

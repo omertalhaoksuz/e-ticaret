@@ -51,7 +51,7 @@ namespace ECommerceApi.Services
                                 table.Cell().Text(item.ProductName);
                                 table.Cell().Text($"{item.Price:C}");
                                 table.Cell().Text(item.Quantity.ToString());
-                                table.Cell().Text(item.Color ?? "-");
+                                table.Cell().Text(!string.IsNullOrWhiteSpace(item.ColorName) ? item.ColorName : "-");
                             }
                         });
 
